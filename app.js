@@ -13,6 +13,7 @@ let activeFilter = 'all';
 let editingExpenseId = null;
 let editingContributionId = null;
 let editingCommentId = null;
+let expandedExpenseIds = new Set();
 let toastTimer;
 
 const $ = (selector) => document.querySelector(selector);
@@ -146,9 +147,15 @@ function renderExpenses() {
     const outstanding = Math.max(0, total - paid.total);
     const status = paid.total >= total && total > 0 ? 'שולם' : paid.total > 0 ? 'חלקי' : 'מתוכנן';
     const lastPaidDate = latestPaymentDate(expense.id);
+    const expanded = expandedExpenseIds.has(expense.id);
+    const splitText = splitLabel(expense, expenseShares(expense));
     const tr = document.createElement('tr');
-    tr.innerHTML = `<td><div class="expense-name">${escapeHtml(expense.name)}</div></td><td class="expense-date">${lastPaidDate ? formatDate(lastPaidDate) : '—'}</td><td><span class="split-pill">${splitLabel(expense, expenseShares(expense))}</span></td><td class="align-right money">${money(total)}</td><td class="align-right money paid-money">${money(paid.total)}</td><td class="align-right money paid-money">${money(paid.a)}</td><td class="align-right money paid-money">${money(paid.b)}</td><td class="align-right money ${outstanding > 0 ? 'outstanding-money' : 'paid-money'}">${money(outstanding)}</td><td><span class="status-pill status-${statusClass(status)}">${status}</span></td><td><div class="action-buttons"><button class="row-actions" data-expense-payment="${expense.id}" type="button" aria-label="הוספת תשלום עבור ${escapeHtml(expense.name)}">＋</button><button class="row-actions" data-expense-edit="${expense.id}" type="button" aria-label="עריכת ${escapeHtml(expense.name)}">✎</button><button class="row-actions delete-action" data-expense-delete="${expense.id}" type="button" aria-label="מחיקת ${escapeHtml(expense.name)}">×</button></div></td>`;
+    tr.innerHTML = `<td><button class="expense-name-toggle" data-expense-toggle="${expense.id}" type="button" aria-expanded="${expanded}" aria-label="הצגת פרטי ${escapeHtml(expense.name)}"><span class="expense-name">${escapeHtml(expense.name)}</span><span class="expand-indicator" aria-hidden="true">⌄</span></button></td><td class="expense-date">${lastPaidDate ? formatDate(lastPaidDate) : '—'}</td><td><span class="split-pill">${escapeHtml(splitText)}</span></td><td class="align-right money">${money(total)}</td><td class="align-right money paid-money">${money(paid.total)}</td><td class="align-right money paid-money">${money(paid.a)}</td><td class="align-right money paid-money">${money(paid.b)}</td><td class="align-right money ${outstanding > 0 ? 'outstanding-money' : 'paid-money'}">${money(outstanding)}</td><td><span class="status-pill status-${statusClass(status)}">${status}</span></td><td><div class="action-buttons"><button class="row-actions" data-expense-payment="${expense.id}" type="button" aria-label="הוספת תשלום עבור ${escapeHtml(expense.name)}">＋</button><button class="row-actions" data-expense-edit="${expense.id}" type="button" aria-label="עריכת ${escapeHtml(expense.name)}">✎</button><button class="row-actions delete-action" data-expense-delete="${expense.id}" type="button" aria-label="מחיקת ${escapeHtml(expense.name)}">×</button></div></td>`;
     rows.appendChild(tr);
+    const detailRow = document.createElement('tr');
+    detailRow.className = `mobile-expansion${expanded ? ' is-open' : ''}`;
+    detailRow.innerHTML = `<td colspan="10"><div class="expense-details"><div><small>תאריך תשלום</small><strong>${lastPaidDate ? formatDate(lastPaidDate) : '—'}</strong></div><div><small>חלוקה</small><strong>${escapeHtml(splitText)}</strong></div><div><small>מתוכנן</small><strong>${money(total)}</strong></div><div><small>סה״כ שולם</small><strong class="paid-money">${money(paid.total)}</strong></div><div><small>שפירא שילמו</small><strong class="paid-money">${money(paid.a)}</strong></div><div><small>חגאג שילמו</small><strong class="paid-money">${money(paid.b)}</strong></div><div><small>נותר לספק</small><strong class="${outstanding > 0 ? 'outstanding-money' : 'paid-money'}">${money(outstanding)}</strong></div><div><small>סטטוס</small><strong><span class="status-pill status-${statusClass(status)}">${status}</span></strong></div>${expense.notes ? `<div class="expense-detail-note"><small>הערות</small><strong>${escapeHtml(expense.notes)}</strong></div>` : ''}</div></td>`;
+    rows.appendChild(detailRow);
   });
 }
 
@@ -318,6 +325,7 @@ function deleteExpense(expenseId) {
   if (!window.confirm(message)) return;
   state.expenses = state.expenses.filter((item) => item.id !== expenseId);
   state.contributions = state.contributions.filter((item) => item.expenseId !== expenseId);
+  expandedExpenseIds.delete(expenseId);
   saveState();
   render();
   queueSync({ type: 'deleteExpense', expenseId });
@@ -495,6 +503,14 @@ function bindEvents() {
   $('#searchInput').addEventListener('input', renderExpenses);
   document.querySelectorAll('.filter-button').forEach((button) => button.addEventListener('click', () => { activeFilter = button.dataset.filter; document.querySelectorAll('.filter-button').forEach((item) => item.classList.toggle('active', item === button)); renderExpenses(); }));
   $('#expenseRows').addEventListener('click', (event) => {
+    const toggleButton = event.target.closest('[data-expense-toggle]');
+    if (toggleButton) {
+      const expenseId = toggleButton.dataset.expenseToggle;
+      if (expandedExpenseIds.has(expenseId)) expandedExpenseIds.delete(expenseId);
+      else expandedExpenseIds.add(expenseId);
+      renderExpenses();
+      return;
+    }
     const paymentButton = event.target.closest('[data-expense-payment]');
     const editButton = event.target.closest('[data-expense-edit]');
     const deleteButton = event.target.closest('[data-expense-delete]');
