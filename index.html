@@ -1,0 +1,72 @@
+<!doctype html>
+<html lang="he" dir="rtl">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="theme-color" content="#fbf7f0">
+  <title>חתונה של חלי ועילי — תקציב</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Heebo:wght@400;500;600;700;800&family=Playfair+Display:wght@600;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="styles.css?v=4">
+</head>
+<body>
+  <div class="page-shell">
+    <header class="topbar">
+      <a class="brand" href="#top" aria-label="דף הבית של תקציב החתונה">
+        <span class="brand-mark">✦</span>
+        <strong>חתונה של חלי ועילי</strong>
+      </a>
+      <div class="top-actions">
+        <span id="syncStatus" class="sync-status"><span class="status-dot"></span> מצב הדגמה</span>
+        <button class="button button-quiet" id="settingsButton" type="button">הגדרות</button>
+        <button class="button button-payment" id="topAddPaymentButton" type="button">＋ הוספת תשלום</button>
+        <button class="button button-dark" id="addExpenseButton" type="button">＋ הוספת הוצאה</button>
+      </div>
+    </header>
+
+    <main id="top">
+      <section class="family-grid" aria-label="מאזן בין המשפחות">
+        <article class="family-card family-a">
+          <div class="family-title"><span class="family-avatar" id="familyAAvatar">ש</span><div><h2 id="familyAName">שפירא</h2><p>החלק המשפחתי בעלויות</p></div></div>
+          <div class="family-stats"><div><small>חלק לתשלום</small><strong id="familyATarget">$0</strong></div><div><small>שולם / הועבר</small><strong id="familyAGiven">$0</strong></div><div><small>נותר לתשלום</small><strong id="familyARemaining">$0</strong></div></div>
+          <div class="mini-track"><span id="familyAProgress" style="width:0%"></span></div>
+        </article>
+        <article class="family-card family-b">
+          <div class="family-title"><span class="family-avatar" id="familyBAvatar">ח</span><div><h2 id="familyBName">חגאג</h2><p>החלק המשפחתי בעלויות</p></div></div>
+          <div class="family-stats"><div><small>חלק לתשלום</small><strong id="familyBTarget">$0</strong></div><div><small>שולם / הועבר</small><strong id="familyBGiven">$0</strong></div><div><small>נותר לתשלום</small><strong id="familyBRemaining">$0</strong></div></div>
+          <div class="mini-track"><span id="familyBProgress" style="width:0%"></span></div>
+        </article>
+      </section>
+
+      <section class="workspace-section">
+        <div class="section-header">
+          <div><h2>תשלומים והוצאות</h2></div>
+        </div>
+        <div class="toolbar">
+          <label class="search-box"><span>⌕</span><input id="searchInput" type="search" placeholder="חיפוש הוצאות…" aria-label="חיפוש הוצאות"></label>
+          <div class="filter-buttons" role="group" aria-label="סינון הוצאות"><button class="filter-button active" data-filter="all" type="button">הכול <b id="countAll">0</b></button><button class="filter-button" data-filter="open" type="button">פתוחות <b id="countOpen">0</b></button><button class="filter-button" data-filter="paid" type="button">שולמו <b id="countPaid">0</b></button></div>
+        </div>
+        <div class="table-wrap">
+          <table class="expense-table"><thead><tr><th>הוצאה / ספק</th><th>מועד תשלום</th><th>חלוקה</th><th class="align-right">מתוכנן</th><th class="align-right">סה״כ שולם</th><th class="align-right">שפירא שילמו</th><th class="align-right">חגאג שילמו</th><th class="align-right">נותר לספק</th><th>סטטוס</th><th><span class="sr-only">פעולות</span></th></tr></thead><tbody id="expenseRows"></tbody></table>
+          <div id="emptyState" class="empty-state"><div class="empty-icon">✧</div><h3>מכאן מתחילים</h3><p>הוסיפו את האולם, הקייטרינג, הצלם וכל פרט קטן בדרך.</p><button class="button button-dark" id="emptyAddButton" type="button">הוספת ההוצאה הראשונה</button></div>
+        </div>
+      </section>
+
+      <section class="notes-section">
+        <div class="section-header"><div><p class="eyebrow">איך זה עובד</p><h2>פשוט, משותף וברור</h2></div></div>
+        <div class="notes-grid"><div class="note"><span>01</span><div><h3>מתכננים</h3><p>מוסיפים עלות משוערת גם לפני ששולם משהו. אפשר לבחור סכום קבוע או לחשב לפי מספר אורחים, ואז לבחור מי משלם את ההוצאה.</p></div></div><div class="note"><span>02</span><div><h3>מתעדים</h3><p>רושמים מקדמות, תשלומים מראש ותשלומים ישירים לספקים. הכול גלוי לשתי המשפחות.</p></div></div><div class="note"><span>03</span><div><h3>מאזנים</h3><p>כרטיסי המשפחות מציגים את החלק של כל צד, כמה הועבר וכמה עדיין נותר.</p></div></div></div>
+      </section>
+    </main>
+  </div>
+
+  <dialog id="expenseDialog" class="modal"><form method="dialog" id="expenseForm"><div class="modal-header"><div><p class="eyebrow" id="expenseDialogEyebrow">הוספה לתוכנית</p><h2 id="expenseDialogTitle">הוצאה חדשה</h2></div><button class="close-button" value="cancel" aria-label="סגירה">×</button></div><div class="form-grid"><label class="field field-wide"><span>מה ההוצאה? <em>*</em></span><input name="name" required maxlength="100" placeholder="לדוגמה: מקדמה לאולם"></label><label class="field"><span>ספק / הערה</span><input name="vendor" maxlength="100" placeholder="לא חובה"></label><label class="field"><span>מועד תשלום</span><input name="dueDate" type="date"></label><label class="field field-wide"><span>איך מחשבים את הסכום?</span><select name="amountMethod" id="amountMethod"><option value="fixed">סכום קבוע</option><option value="guests">לפי מספר אורחים</option></select></label><label class="field"><span>סכום מתוכנן <em>*</em></span><input name="amount" id="expenseAmount" type="number" min="0" step="0.01" required placeholder="0.00"></label><div class="split-details field-wide" id="guestDetails"><label class="field"><span>מספר אורחים</span><input name="guestCount" type="number" min="0" step="1" value="0"></label><label class="field"><span>מחיר לאורח</span><input name="perGuest" type="number" min="0" step="0.01" value="0"></label><p class="field-help">הסכום יחושב לפי מספר האורחים × המחיר לאורח. כדי שכל צד ישלם רק עבור אורחיו, יוצרים שורה נפרדת לכל משפחה.</p></div><label class="field field-wide"><span>מי משלם / איך לחלק?</span><select name="splitMethod" id="splitMethod"><option value="even">חצי-חצי — 50 / 50</option><option value="familyA">100% שפירא</option><option value="familyB">100% חגאג</option><option value="custom">סכומים מותאמים למשפחות</option></select></label><div class="split-details field-wide" id="customDetails"><label class="field"><span id="customAFLabel">סכום שפירא</span><input name="customA" type="number" min="0" step="0.01" value="0"></label><label class="field"><span id="customBFLabel">סכום חגאג</span><input name="customB" type="number" min="0" step="0.01" value="0"></label><p class="field-help">הסכומים צריכים להיות שווים לסכום המתוכנן.</p></div><label class="field"><span>הערות</span><input name="notes" maxlength="160" placeholder="פרטים נוספים, לא חובה"></label><div class="instant-payment-details field-wide" id="instantPaymentDetails"><p class="field-help">אם ההוצאה שולמה עכשיו, אפשר לרשום את התשלום כאן ולא לפתוח תשלום נפרד.</p><label class="field"><span>סכום ששולם עכשיו</span><input name="paidAmount" type="number" min="0" step="0.01" placeholder="0.00"></label><label class="field"><span>מי שילם?</span><select name="paidBy"><option value="A">שפירא</option><option value="B">חגאג</option></select></label></div></div><p class="form-error" id="expenseError" role="alert"></p><div class="modal-footer"><button class="button button-quiet" value="cancel">ביטול</button><button class="button button-dark" value="default">שמירת הוצאה</button></div></form></dialog>
+
+  <dialog id="paymentDialog" class="modal"><form method="dialog" id="paymentForm"><div class="modal-header"><div><p class="eyebrow" id="paymentDialogEyebrow">רישום תשלום</p><h2 id="paymentDialogTitle">הוספת תשלום</h2></div><button class="close-button" value="cancel" aria-label="סגירה">×</button></div><div class="form-grid"><label class="field"><span>משפחה <em>*</em></span><select name="family" id="paymentFamily"><option value="A">שפירא</option><option value="B">חגאג</option></select></label><label class="field"><span>סכום <em>*</em></span><input name="amount" type="number" min="0.01" step="0.01" required placeholder="0.00"></label><label class="field"><span>תאריך</span><input name="date" type="date"></label><label class="field"><span>סוג תשלום</span><select name="type"><option value="שולם">שולם</option></select></label><label class="field field-wide"><span>לאיזו הוצאה לשייך? <em>*</em></span><select name="expenseId" id="paymentExpense" required></select></label><label class="field field-wide"><span>הערה</span><input name="note" maxlength="160" placeholder="לדוגמה: מקדמה ראשונה לאולם"></label></div><p class="form-error" id="paymentError" role="alert"></p><div class="modal-footer"><button class="button button-quiet" value="cancel">ביטול</button><button class="button button-dark" value="default">שמירת תשלום</button></div></form></dialog>
+
+  <dialog id="settingsDialog" class="modal"><form method="dialog" id="settingsForm"><div class="modal-header"><div><p class="eyebrow">חיבור והתאמה</p><h2>הגדרות</h2></div><button class="close-button" value="cancel" aria-label="סגירה">×</button></div><div class="form-grid"><label class="field field-wide"><span>חיבור Google Sheets <small>(מוגדר מראש)</small></span><input name="apiUrl" type="url" readonly></label><p class="field-help field-wide">החיבור ל־Google Sheets כבר מוגדר באפליקציה. אין צורך להזין כתובת או לשנות הגדרה. כל הסכומים מוצגים בשקלים (₪).</p></div><p class="form-error" id="settingsError" role="alert"></p><div class="modal-footer"><button class="button button-quiet" value="cancel">ביטול</button><button class="button button-dark" value="default">שמירת הגדרות</button></div></form></dialog>
+
+  <div id="toast" class="toast" role="status" aria-live="polite"></div>
+  <script src="app.js?v=8"></script>
+</body>
+</html>
