@@ -12,6 +12,7 @@ let state = loadState();
 let activeFilter = 'all';
 let editingExpenseId = null;
 let editingContributionId = null;
+let editingCommentId = null;
 let toastTimer;
 
 const $ = (selector) => document.querySelector(selector);
@@ -361,11 +362,13 @@ function renderComments() {
     list.innerHTML = '<p class="comments-empty">עדיין אין הערות כלליות.</p>';
     return;
   }
-  list.innerHTML = state.comments.slice().sort((a, b) => String(b.createdAt || '').localeCompare(String(a.createdAt || ''))).map((comment) => `<article class="comment-card"><div class="comment-meta"><time>${formatDate(String(comment.createdAt || '').slice(0, 10), true)}</time><button type="button" class="comment-delete" data-comment-delete="${escapeHtml(comment.id)}" aria-label="מחיקת הערה">×</button></div><p>${escapeHtml(comment.text).replace(/\n/g, '<br>')}</p></article>`).join('');
+  list.innerHTML = state.comments.slice().sort((a, b) => String(b.createdAt || '').localeCompare(String(a.createdAt || ''))).map((comment) => `<article class="comment-card"><div class="comment-meta"><time>${formatDate(String(comment.createdAt || '').slice(0, 10), true)}</time><div class="comment-actions"><button type="button" class="comment-edit" data-comment-edit="${escapeHtml(comment.id)}" aria-label="עריכת הערה">✎</button><button type="button" class="comment-delete" data-comment-delete="${escapeHtml(comment.id)}" aria-label="מחיקת הערה">×</button></div></div><p>${escapeHtml(comment.text).replace(/\n/g, '<br>')}</p></article>`).join('');
 }
 
 function openComments() {
+  editingCommentId = null;
   $('#commentsForm').reset();
+  $('#commentSaveButton').textContent = 'שמירת הערה';
   $('#commentError').textContent = '';
   renderComments();
   $('#commentsDialog').showModal();
@@ -381,13 +384,27 @@ function handleCommentSubmit(event) {
     $('#commentError').textContent = 'נא לכתוב הערה לפני השמירה.';
     return;
   }
-  const comment = { id: uid('comment'), createdAt: new Date().toISOString(), text };
-  state.comments.push(comment);
+  const existing = editingCommentId ? state.comments.find((item) => item.id === editingCommentId) : null;
+  const comment = { id: existing?.id || uid('comment'), createdAt: existing?.createdAt || new Date().toISOString(), text };
+  const index = state.comments.findIndex((item) => item.id === comment.id);
+  if (index >= 0) state.comments[index] = comment; else state.comments.push(comment);
+  const command = { type: existing ? 'updateComment' : 'addComment', comment };
+  editingCommentId = null;
   saveState();
   $('#commentsDialog').close();
   render();
-  queueSync({ type: 'addComment', comment });
-  showToast('ההערה נשמרה');
+  queueSync(command);
+  showToast(existing ? 'ההערה עודכנה' : 'ההערה נשמרה');
+}
+
+function editComment(commentId) {
+  const comment = state.comments.find((item) => item.id === commentId);
+  if (!comment) return;
+  editingCommentId = commentId;
+  $('#commentText').value = comment.text;
+  $('#commentSaveButton').textContent = 'עדכון הערה';
+  $('#commentError').textContent = '';
+  $('#commentText').focus();
 }
 
 function deleteComment(commentId) {
@@ -395,6 +412,11 @@ function deleteComment(commentId) {
   if (!comment) return;
   if (!window.confirm('למחוק את ההערה?')) return;
   state.comments = state.comments.filter((item) => item.id !== commentId);
+  if (editingCommentId === commentId) {
+    editingCommentId = null;
+    $('#commentText').value = '';
+    $('#commentSaveButton').textContent = 'שמירת הערה';
+  }
   saveState();
   render();
   queueSync({ type: 'deleteComment', commentId });
@@ -462,8 +484,10 @@ function bindEvents() {
   $('#settingsForm').addEventListener('submit', handleSettingsSubmit);
   $('#commentsForm').addEventListener('submit', handleCommentSubmit);
   $('#generalCommentsList').addEventListener('click', (event) => {
+    const editButton = event.target.closest('[data-comment-edit]');
     const deleteButton = event.target.closest('[data-comment-delete]');
-    if (deleteButton) deleteComment(deleteButton.dataset.commentDelete);
+    if (editButton) editComment(editButton.dataset.commentEdit);
+    else if (deleteButton) deleteComment(deleteButton.dataset.commentDelete);
   });
   $('#splitMethod').addEventListener('change', toggleSplitDetails);
   $('#amountMethod').addEventListener('change', toggleSplitDetails);

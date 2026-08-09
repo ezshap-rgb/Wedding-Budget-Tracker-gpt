@@ -8,7 +8,7 @@
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Heebo:wght@400;500;600;700;800&family=Playfair+Display:wght@600;700&display=swap" rel="stylesheet">
-  <link rel="stylesheet" href="styles.css?v=5">
+  <link rel="stylesheet" href="styles.css?v=6">
 </head>
 <body>
   <div class="page-shell">
@@ -67,9 +67,9 @@
 
   <dialog id="settingsDialog" class="modal"><form method="dialog" id="settingsForm"><div class="modal-header"><div><p class="eyebrow">חיבור והתאמה</p><h2>הגדרות</h2></div><button class="close-button" value="cancel" aria-label="סגירה">×</button></div><div class="form-grid"><label class="field field-wide"><span>חיבור Google Sheets <small>(מוגדר מראש)</small></span><input name="apiUrl" type="url" readonly></label><p class="field-help field-wide">החיבור ל־Google Sheets כבר מוגדר באפליקציה. אין צורך להזין כתובת או לשנות הגדרה. כל הסכומים מוצגים בשקלים (₪).</p></div><p class="form-error" id="settingsError" role="alert"></p><div class="modal-footer"><button class="button button-quiet" value="cancel">ביטול</button><button class="button button-dark" value="default">שמירת הגדרות</button></div></form></dialog>
 
-  <dialog id="commentsDialog" class="modal comments-modal"><form method="dialog" id="commentsForm"><div class="modal-header"><div><p class="eyebrow">רשימות החתונה</p><h2>הערות כלליות</h2></div><button class="close-button" value="cancel" aria-label="סגירה">×</button></div><div id="generalCommentsList" class="comments-list"></div><label class="field field-wide"><span>הערה חדשה</span><textarea id="commentText" name="text" rows="4" maxlength="1000" placeholder="כתבו כאן הערה, תזכורת או החלטה משותפת…"></textarea></label><p class="form-error" id="commentError" role="alert"></p><div class="modal-footer"><button class="button button-quiet" value="cancel">סגירה</button><button class="button button-dark" value="default">שמירת הערה</button></div></form></dialog>
+  <dialog id="commentsDialog" class="modal comments-modal"><form method="dialog" id="commentsForm"><div class="modal-header"><div><p class="eyebrow">רשימות החתונה</p><h2>הערות כלליות</h2></div><button class="close-button" value="cancel" aria-label="סגירה">×</button></div><div id="generalCommentsList" class="comments-list"></div><label class="field field-wide"><span>הערה חדשה</span><textarea id="commentText" name="text" rows="4" maxlength="1000" placeholder="כתבו כאן הערה, תזכורת או החלטה משותפת…"></textarea></label><p class="form-error" id="commentError" role="alert"></p><div class="modal-footer"><button class="button button-quiet" value="cancel">סגירה</button><button class="button button-dark" id="commentSaveButton" value="default">שמירת הערה</button></div></form></dialog>
 
   <div id="toast" class="toast" role="status" aria-live="polite"></div>
-  <script src="app.js?v=9"></script>
+  <script src="app.js?v=10"></script>
 </body>
 </html>

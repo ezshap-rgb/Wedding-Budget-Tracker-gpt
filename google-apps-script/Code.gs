@@ -66,6 +66,8 @@ function doPost(event) {
       if (!deleteRow_(spreadsheet.getSheetByName(SHEETS.contributions.name), command.contributionId)) return json_({ ok: false, error: 'Contribution not found' });
     } else if (command.type === 'addComment' && command.comment && String(command.comment.text || '').trim()) {
       spreadsheet.getSheetByName(SHEETS.comments.name).appendRow(commentRow_(command.comment));
+    } else if (command.type === 'updateComment' && command.comment && String(command.comment.text || '').trim()) {
+      if (!updateRow_(spreadsheet.getSheetByName(SHEETS.comments.name), command.comment.id, commentRow_(command.comment))) return json_({ ok: false, error: 'Comment not found' });
     } else if (command.type === 'deleteComment' && command.commentId) {
       if (!deleteRow_(spreadsheet.getSheetByName(SHEETS.comments.name), command.commentId)) return json_({ ok: false, error: 'Comment not found' });
     } else {
