@@ -7,7 +7,8 @@
 const SHEETS = {
   config: { name: 'הגדרות', headers: ['מפתח', 'ערך'] },
   expenses: { name: 'הוצאות', headers: ['מזהה', 'נוצר בתאריך', 'שם ההוצאה', 'קטגוריה (ישן)', 'ספק', 'סכום', 'מועד תשלום', 'אופן חלוקה', 'אורחי שפירא (ישן)', 'אורחי חגאג (ישן)', 'מחיר לאורח', 'סכום שפירא', 'סכום חגאג', 'סטטוס (מחושב)', 'הערות', 'אופן חישוב הסכום', 'מספר אורחים'] },
-  contributions: { name: 'תשלומים', headers: ['מזהה', 'נוצר בתאריך', 'תאריך', 'משפחה', 'סכום', 'סוג תשלום', 'מזהה הוצאה', 'הערה'] }
+  contributions: { name: 'תשלומים', headers: ['מזהה', 'נוצר בתאריך', 'תאריך', 'משפחה', 'סכום', 'סוג תשלום', 'מזהה הוצאה', 'הערה'] },
+  comments: { name: 'הערות', headers: ['מזהה', 'נוצר בתאריך', 'הערה'] }
 };
 
 function setupWeddingBudget() {
@@ -15,6 +16,7 @@ function setupWeddingBudget() {
   Object.keys(SHEETS).forEach(function (key) {
     const definition = SHEETS[key];
     const sheet = spreadsheet.getSheetByName(definition.name) || spreadsheet.insertSheet(definition.name);
+    sheet.setRightToLeft(true);
     if (sheet.getLastRow() === 0) {
       sheet.getRange(1, 1, 1, definition.headers.length).setValues([definition.headers]);
     } else {
@@ -62,6 +64,10 @@ function doPost(event) {
       if (!updateRow_(spreadsheet.getSheetByName(SHEETS.contributions.name), command.contribution.id, contributionRow_(command.contribution))) return json_({ ok: false, error: 'Contribution not found' });
     } else if (command.type === 'deleteContribution' && command.contributionId) {
       if (!deleteRow_(spreadsheet.getSheetByName(SHEETS.contributions.name), command.contributionId)) return json_({ ok: false, error: 'Contribution not found' });
+    } else if (command.type === 'addComment' && command.comment && String(command.comment.text || '').trim()) {
+      spreadsheet.getSheetByName(SHEETS.comments.name).appendRow(commentRow_(command.comment));
+    } else if (command.type === 'deleteComment' && command.commentId) {
+      if (!deleteRow_(spreadsheet.getSheetByName(SHEETS.comments.name), command.commentId)) return json_({ ok: false, error: 'Comment not found' });
     } else {
       return json_({ ok: false, error: 'Unknown command' });
     }
@@ -72,13 +78,17 @@ function doPost(event) {
 }
 
 function expenseRow_(item) {
-  return [item.id, item.createdAt, item.name, '', item.vendor, number_(item.amount), item.dueDate,
+  return [item.id, item.createdAt, item.name, '', '', number_(item.amount), '',
     item.splitMethod, 0, 0, number_(item.perGuest), number_(item.customA), number_(item.customB), '', item.notes,
     item.amountMethod || 'fixed', number_(item.guestCount)];
 }
 
 function contributionRow_(item) {
   return [item.id, item.createdAt, item.date, item.family, number_(item.amount), item.type, item.expenseId || '', item.note];
+}
+
+function commentRow_(item) {
+  return [item.id, item.createdAt, item.text];
 }
 
 function findRow_(sheet, id) {
@@ -118,7 +128,8 @@ function readBudget_() {
     ok: true,
     settings: readConfig_(spreadsheet.getSheetByName(SHEETS.config.name)),
     expenses: readExpenses_(spreadsheet.getSheetByName(SHEETS.expenses.name)),
-    contributions: readContributions_(spreadsheet.getSheetByName(SHEETS.contributions.name))
+    contributions: readContributions_(spreadsheet.getSheetByName(SHEETS.contributions.name)),
+    comments: readComments_(spreadsheet.getSheetByName(SHEETS.comments.name))
   };
 }
 
@@ -147,6 +158,13 @@ function readContributions_(sheet) {
   if (!sheet || sheet.getLastRow() < 2) return [];
   return sheet.getRange(2, 1, sheet.getLastRow() - 1, SHEETS.contributions.headers.length).getValues().filter(function (row) { return row[0]; }).map(function (row) {
     return { id: String(row[0]), createdAt: String(row[1] || ''), date: dateString_(row[2]), family: String(row[3] || 'A'), amount: number_(row[4]), type: String(row[5] || 'Contribution'), expenseId: String(row[6] || ''), note: String(row[7] || '') };
+  });
+}
+
+function readComments_(sheet) {
+  if (!sheet || sheet.getLastRow() < 2) return [];
+  return sheet.getRange(2, 1, sheet.getLastRow() - 1, SHEETS.comments.headers.length).getValues().filter(function (row) { return row[0]; }).map(function (row) {
+    return { id: String(row[0]), createdAt: String(row[1] || ''), text: String(row[2] || '') };
   });
 }
 

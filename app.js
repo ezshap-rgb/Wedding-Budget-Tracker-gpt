@@ -5,7 +5,8 @@ const GOOGLE_APPS_SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbyOvwwAU
 const defaultState = {
   settings: { familyA: FAMILY_A, familyB: FAMILY_B, currency: 'ILS', apiUrl: GOOGLE_APPS_SCRIPT_URL },
   expenses: [],
-  contributions: []
+  contributions: [],
+  comments: []
 };
 let state = loadState();
 let activeFilter = 'all';
@@ -70,6 +71,7 @@ function render() {
   renderSettings();
   renderFamilyCards();
   renderExpenses();
+  renderComments();
   updateExpenseOptions();
 }
 
@@ -109,7 +111,7 @@ function visibleExpenses() {
     const matchesFilter = activeFilter === 'all' || (activeFilter === 'paid' ? paid >= Number(expense.amount || 0) : paid < Number(expense.amount || 0));
     const matchesQuery = !query || [expense.name, expense.vendor, expense.notes].join(' ').toLowerCase().includes(query);
     return matchesFilter && matchesQuery;
-  }).sort((a, b) => (a.dueDate || '9999').localeCompare(b.dueDate || '9999'));
+  });
 }
 
 function paymentTotals(expenseId) {
@@ -120,6 +122,10 @@ function paymentTotals(expenseId) {
     result.total += amount;
     return result;
   }, { a: 0, b: 0, total: 0 });
+}
+
+function latestPaymentDate(expenseId) {
+  return state.contributions.filter((item) => item.expenseId === expenseId && item.date).reduce((latest, item) => item.date > latest ? item.date : latest, '');
 }
 
 function renderExpenses() {
@@ -138,8 +144,9 @@ function renderExpenses() {
     const total = Number(expense.amount) || 0;
     const outstanding = Math.max(0, total - paid.total);
     const status = paid.total >= total && total > 0 ? 'שולם' : paid.total > 0 ? 'חלקי' : 'מתוכנן';
+    const lastPaidDate = latestPaymentDate(expense.id);
     const tr = document.createElement('tr');
-    tr.innerHTML = `<td><div class="expense-name">${escapeHtml(expense.name)}</div><div class="expense-vendor">${escapeHtml(expense.vendor || '')}</div></td><td class="expense-date ${expense.dueDate && expense.dueDate < today() && outstanding > 0 ? 'overdue' : ''}">${expense.dueDate ? formatDate(expense.dueDate) : '—'}</td><td><span class="split-pill">${splitLabel(expense, expenseShares(expense))}</span></td><td class="align-right money">${money(total)}</td><td class="align-right money paid-money">${money(paid.total)}</td><td class="align-right money paid-money">${money(paid.a)}</td><td class="align-right money paid-money">${money(paid.b)}</td><td class="align-right money ${outstanding > 0 ? 'outstanding-money' : 'paid-money'}">${money(outstanding)}</td><td><span class="status-pill status-${statusClass(status)}">${status}</span></td><td><div class="action-buttons"><button class="row-actions" data-expense-payment="${expense.id}" type="button" aria-label="הוספת תשלום עבור ${escapeHtml(expense.name)}">＋</button><button class="row-actions" data-expense-edit="${expense.id}" type="button" aria-label="עריכת ${escapeHtml(expense.name)}">✎</button><button class="row-actions delete-action" data-expense-delete="${expense.id}" type="button" aria-label="מחיקת ${escapeHtml(expense.name)}">×</button></div></td>`;
+    tr.innerHTML = `<td><div class="expense-name">${escapeHtml(expense.name)}</div></td><td class="expense-date">${lastPaidDate ? formatDate(lastPaidDate) : '—'}</td><td><span class="split-pill">${splitLabel(expense, expenseShares(expense))}</span></td><td class="align-right money">${money(total)}</td><td class="align-right money paid-money">${money(paid.total)}</td><td class="align-right money paid-money">${money(paid.a)}</td><td class="align-right money paid-money">${money(paid.b)}</td><td class="align-right money ${outstanding > 0 ? 'outstanding-money' : 'paid-money'}">${money(outstanding)}</td><td><span class="status-pill status-${statusClass(status)}">${status}</span></td><td><div class="action-buttons"><button class="row-actions" data-expense-payment="${expense.id}" type="button" aria-label="הוספת תשלום עבור ${escapeHtml(expense.name)}">＋</button><button class="row-actions" data-expense-edit="${expense.id}" type="button" aria-label="עריכת ${escapeHtml(expense.name)}">✎</button><button class="row-actions delete-action" data-expense-delete="${expense.id}" type="button" aria-label="מחיקת ${escapeHtml(expense.name)}">×</button></div></td>`;
     rows.appendChild(tr);
   });
 }
@@ -173,6 +180,7 @@ function escapeHtml(value) {
 function openExpenseDialog(expenseId = null) {
   const form = $('#expenseForm');
   form.reset();
+  form.elements.paidDate.value = today();
   editingExpenseId = expenseId;
   const expense = expenseId ? state.expenses.find((item) => item.id === expenseId) : null;
   $('#expenseDialogEyebrow').textContent = expense ? 'עדכון בתוכנית' : 'הוספה לתוכנית';
@@ -182,7 +190,7 @@ function openExpenseDialog(expenseId = null) {
     const legacyShares = expenseShares(expense);
     const splitMethod = legacyGuestSplit ? 'custom' : expense.splitMethod;
     const amountMethod = legacyGuestSplit ? 'fixed' : (expense.amountMethod || 'fixed');
-    Object.entries({ name: expense.name, vendor: expense.vendor, amount: expense.amount, dueDate: expense.dueDate, amountMethod, splitMethod, guestCount: expense.guestCount, perGuest: expense.perGuest, customA: legacyGuestSplit ? legacyShares.a : expense.customA, customB: legacyGuestSplit ? legacyShares.b : expense.customB, notes: expense.notes }).forEach(([key, value]) => { if (form.elements[key]) form.elements[key].value = value ?? ''; });
+    Object.entries({ name: expense.name, amount: expense.amount, amountMethod, splitMethod, guestCount: expense.guestCount, perGuest: expense.perGuest, customA: legacyGuestSplit ? legacyShares.a : expense.customA, customB: legacyGuestSplit ? legacyShares.b : expense.customB, notes: expense.notes }).forEach(([key, value]) => { if (form.elements[key]) form.elements[key].value = value ?? ''; });
   }
   $('#expenseError').textContent = '';
   toggleSplitDetails();
@@ -216,7 +224,7 @@ function updateExpenseOptions(selected = '') {
   select.innerHTML = '';
   const placeholder = document.createElement('option');
   placeholder.value = '';
-  placeholder.textContent = state.expenses.length ? 'בחירת הוצאה / ספק' : 'יש להוסיף הוצאה לפני תשלום';
+  placeholder.textContent = state.expenses.length ? 'בחירת הוצאה' : 'יש להוסיף הוצאה לפני תשלום';
   placeholder.disabled = true;
   placeholder.selected = !selected;
   select.appendChild(placeholder);
@@ -266,8 +274,8 @@ function handleExpenseSubmit(event) {
   const existing = editingExpenseId ? state.expenses.find((item) => item.id === editingExpenseId) : null;
   const existingPaid = existing ? expensePaid(existing.id) : 0;
   if (paidAmount < 0 || paidAmount > Math.max(0, amount - existingPaid) + 0.01) { error.textContent = 'סכום התשלום הנוסף אינו יכול להיות גדול מהיתרה של ההוצאה.'; return; }
-  const expense = { id: existing?.id || uid('expense'), createdAt: existing?.createdAt || new Date().toISOString(), name: data.name.trim(), vendor: data.vendor.trim(), amount, dueDate: data.dueDate, amountMethod: data.amountMethod || 'fixed', splitMethod: data.splitMethod, guestCount: Number(data.guestCount) || 0, perGuest: Number(data.perGuest) || 0, customA: Number(data.customA) || 0, customB: Number(data.customB) || 0, notes: data.notes.trim() };
-  const immediatePayment = paidAmount > 0 ? { id: uid('contribution'), createdAt: new Date().toISOString(), date: today(), family: data.paidBy || 'A', amount: paidAmount, type: 'שולם', expenseId: expense.id, note: 'שולם בעת הוספת ההוצאה' } : null;
+  const expense = { id: existing?.id || uid('expense'), createdAt: existing?.createdAt || new Date().toISOString(), name: data.name.trim(), vendor: '', amount, dueDate: '', amountMethod: data.amountMethod || 'fixed', splitMethod: data.splitMethod, guestCount: Number(data.guestCount) || 0, perGuest: Number(data.perGuest) || 0, customA: Number(data.customA) || 0, customB: Number(data.customB) || 0, notes: data.notes.trim() };
+  const immediatePayment = paidAmount > 0 ? { id: uid('contribution'), createdAt: new Date().toISOString(), date: data.paidDate || today(), family: data.paidBy || 'A', amount: paidAmount, type: 'שולם', expenseId: expense.id, note: 'שולם בעת הוספת ההוצאה' } : null;
   const index = state.expenses.findIndex((item) => item.id === expense.id);
   if (index >= 0) state.expenses[index] = expense; else state.expenses.push(expense);
   if (immediatePayment) state.contributions.push(immediatePayment);
@@ -288,7 +296,7 @@ function handlePaymentSubmit(event) {
   const data = Object.fromEntries(new FormData(form).entries());
   const amount = Number(data.amount) || 0;
   if (amount <= 0) { $('#paymentError').textContent = 'נא להזין סכום גדול מאפס.'; return; }
-  if (!data.expenseId) { $('#paymentError').textContent = 'נא לבחור את ההוצאה או הספק שקיבל את התשלום.'; return; }
+  if (!data.expenseId) { $('#paymentError').textContent = 'נא לבחור את ההוצאה שקיבלה את התשלום.'; return; }
   const existing = editingContributionId ? state.contributions.find((item) => item.id === editingContributionId) : null;
   const contribution = { id: existing?.id || uid('contribution'), createdAt: existing?.createdAt || new Date().toISOString(), date: data.date || today(), family: data.family, amount, type: 'שולם', expenseId: data.expenseId, note: data.note.trim() };
   const index = state.contributions.findIndex((item) => item.id === contribution.id);
@@ -346,6 +354,53 @@ function openSettings() {
   $('#settingsDialog').showModal();
 }
 
+function renderComments() {
+  const list = $('#generalCommentsList');
+  if (!list) return;
+  if (!state.comments.length) {
+    list.innerHTML = '<p class="comments-empty">עדיין אין הערות כלליות.</p>';
+    return;
+  }
+  list.innerHTML = state.comments.slice().sort((a, b) => String(b.createdAt || '').localeCompare(String(a.createdAt || ''))).map((comment) => `<article class="comment-card"><div class="comment-meta"><time>${formatDate(String(comment.createdAt || '').slice(0, 10), true)}</time><button type="button" class="comment-delete" data-comment-delete="${escapeHtml(comment.id)}" aria-label="מחיקת הערה">×</button></div><p>${escapeHtml(comment.text).replace(/\n/g, '<br>')}</p></article>`).join('');
+}
+
+function openComments() {
+  $('#commentsForm').reset();
+  $('#commentError').textContent = '';
+  renderComments();
+  $('#commentsDialog').showModal();
+  $('#commentText').focus();
+}
+
+function handleCommentSubmit(event) {
+  if (cancelDialogSubmit(event)) return;
+  event.preventDefault();
+  const data = Object.fromEntries(new FormData(event.currentTarget).entries());
+  const text = String(data.text || '').trim();
+  if (!text) {
+    $('#commentError').textContent = 'נא לכתוב הערה לפני השמירה.';
+    return;
+  }
+  const comment = { id: uid('comment'), createdAt: new Date().toISOString(), text };
+  state.comments.push(comment);
+  saveState();
+  $('#commentsDialog').close();
+  render();
+  queueSync({ type: 'addComment', comment });
+  showToast('ההערה נשמרה');
+}
+
+function deleteComment(commentId) {
+  const comment = state.comments.find((item) => item.id === commentId);
+  if (!comment) return;
+  if (!window.confirm('למחוק את ההערה?')) return;
+  state.comments = state.comments.filter((item) => item.id !== commentId);
+  saveState();
+  render();
+  queueSync({ type: 'deleteComment', commentId });
+  showToast('ההערה נמחקה');
+}
+
 function showToast(message) {
   const toast = $('#toast');
   toast.textContent = message;
@@ -383,6 +438,7 @@ function syncFromSheet() {
       }
       state.expenses = Array.isArray(payload.expenses) ? payload.expenses : [];
       state.contributions = Array.isArray(payload.contributions) ? payload.contributions : [];
+      state.comments = Array.isArray(payload.comments) ? payload.comments : state.comments;
       saveState(); render(); setSyncing(false); showToast('Google Sheets מעודכן');
     } else { setSyncing(false); showToast('Google Sheets החזיר שגיאה'); }
   };
@@ -399,10 +455,16 @@ function bindEvents() {
   $('#addExpenseButton').addEventListener('click', openExpenseDialog);
   $('#emptyAddButton').addEventListener('click', openExpenseDialog);
   $('#topAddPaymentButton').addEventListener('click', () => openPaymentDialog());
+  $('#commentsButton').addEventListener('click', openComments);
   $('#settingsButton').addEventListener('click', openSettings);
   $('#expenseForm').addEventListener('submit', handleExpenseSubmit);
   $('#paymentForm').addEventListener('submit', handlePaymentSubmit);
   $('#settingsForm').addEventListener('submit', handleSettingsSubmit);
+  $('#commentsForm').addEventListener('submit', handleCommentSubmit);
+  $('#generalCommentsList').addEventListener('click', (event) => {
+    const deleteButton = event.target.closest('[data-comment-delete]');
+    if (deleteButton) deleteComment(deleteButton.dataset.commentDelete);
+  });
   $('#splitMethod').addEventListener('change', toggleSplitDetails);
   $('#amountMethod').addEventListener('change', toggleSplitDetails);
   ['guestCount', 'perGuest'].forEach((key) => $('#expenseForm').elements[key].addEventListener('input', updateGuestAmount));
