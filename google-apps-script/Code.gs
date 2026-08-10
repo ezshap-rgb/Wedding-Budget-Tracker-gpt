@@ -6,7 +6,7 @@
  */
 const SHEETS = {
   config: { name: 'הגדרות', headers: ['מפתח', 'ערך'] },
-  expenses: { name: 'הוצאות', headers: ['מזהה', 'נוצר בתאריך', 'שם ההוצאה', 'קטגוריה (ישן)', 'ספק', 'סכום', 'מועד תשלום', 'אופן חלוקה', 'אורחי שפירא (ישן)', 'אורחי חגאג (ישן)', 'מחיר לאורח', 'סכום שפירא', 'סכום חגאג', 'סטטוס (מחושב)', 'הערות', 'אופן חישוב הסכום', 'מספר אורחים'] },
+  expenses: { name: 'הוצאות', headers: ['מזהה', 'נוצר בתאריך', 'שם ההוצאה', 'קטגוריה (ישן)', 'ספק', 'סכום', 'מועד תשלום', 'אופן חלוקה', 'אורחי שפירא (ישן)', "אורחי חג'אג (ישן)", 'מחיר לאורח', 'סכום שפירא', "סכום חג'אג", 'סטטוס (מחושב)', 'הערות', 'אופן חישוב הסכום', 'מספר אורחים'] },
   contributions: { name: 'תשלומים', headers: ['מזהה', 'נוצר בתאריך', 'תאריך', 'משפחה', 'סכום', 'סוג תשלום', 'מזהה הוצאה', 'הערה'] },
   comments: { name: 'הערות', headers: ['מזהה', 'נוצר בתאריך', 'הערה'] }
 };
@@ -32,7 +32,7 @@ function setupWeddingBudget() {
   const config = spreadsheet.getSheetByName(SHEETS.config.name);
   config.getRange(2, 1, 3, 2).setValues([
     ['familyA', 'שפירא'],
-    ['familyB', 'חגאג'],
+    ['familyB', "חג'אג'"],
     ['currency', 'ILS']
   ]);
   Logger.log('Wedding Budget tabs are ready. You can now deploy this script as a Web app.');

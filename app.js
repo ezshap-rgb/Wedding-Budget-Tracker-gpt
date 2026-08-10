@@ -1,6 +1,6 @@
 const STORAGE_KEY = 'wedding-budget-v1';
 const FAMILY_A = 'שפירא';
-const FAMILY_B = 'חגאג';
+const FAMILY_B = "חג'אג'";
 const GOOGLE_APPS_SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbyOvwwAU84vlGMoz1K17YgTL018z4ffQb4lu0LAOFub1ytx3gkDHNAgX43y0MRv8C3I/exec';
 const defaultState = {
   settings: { familyA: FAMILY_A, familyB: FAMILY_B, currency: 'ILS', apiUrl: GOOGLE_APPS_SCRIPT_URL },
@@ -154,7 +154,7 @@ function renderExpenses() {
     rows.appendChild(tr);
     const detailRow = document.createElement('tr');
     detailRow.className = `mobile-expansion${expanded ? ' is-open' : ''}`;
-    detailRow.innerHTML = `<td colspan="10"><div class="expense-details"><div><small>תאריך תשלום</small><strong>${lastPaidDate ? formatDate(lastPaidDate) : '—'}</strong></div><div><small>חלוקה</small><strong>${escapeHtml(splitText)}</strong></div><div><small>מתוכנן</small><strong>${money(total)}</strong></div><div><small>סה״כ שולם</small><strong class="paid-money">${money(paid.total)}</strong></div><div><small>שפירא שילמו</small><strong class="paid-money">${money(paid.a)}</strong></div><div><small>חגאג שילמו</small><strong class="paid-money">${money(paid.b)}</strong></div><div><small>נותר לספק</small><strong class="${outstanding > 0 ? 'outstanding-money' : 'paid-money'}">${money(outstanding)}</strong></div><div><small>סטטוס</small><strong><span class="status-pill status-${statusClass(status)}">${status}</span></strong></div>${expense.notes ? `<div class="expense-detail-note"><small>הערות</small><strong>${escapeHtml(expense.notes)}</strong></div>` : ''}</div></td>`;
+    detailRow.innerHTML = `<td colspan="10"><div class="expense-details"><div><small>תאריך תשלום</small><strong>${lastPaidDate ? formatDate(lastPaidDate) : '—'}</strong></div><div><small>חלוקה</small><strong>${escapeHtml(splitText)}</strong></div><div><small>מתוכנן</small><strong>${money(total)}</strong></div><div><small>סה״כ שולם</small><strong class="paid-money">${money(paid.total)}</strong></div><div><small>שפירא שילמו</small><strong class="paid-money">${money(paid.a)}</strong></div><div><small>חג'אג' שילמו</small><strong class="paid-money">${money(paid.b)}</strong></div><div><small>נותר לספק</small><strong class="${outstanding > 0 ? 'outstanding-money' : 'paid-money'}">${money(outstanding)}</strong></div><div><small>סטטוס</small><strong><span class="status-pill status-${statusClass(status)}">${status}</span></strong></div>${expense.notes ? `<div class="expense-detail-note"><small>הערות</small><strong>${escapeHtml(expense.notes)}</strong></div>` : ''}</div></td>`;
     rows.appendChild(detailRow);
   });
 }
