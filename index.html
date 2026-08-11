@@ -8,7 +8,7 @@
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Heebo:wght@400;500;600;700;800&family=Playfair+Display:wght@600;700&display=swap" rel="stylesheet">
-  <link rel="stylesheet" href="styles.css?v=14">
+  <link rel="stylesheet" href="styles.css?v=15">
 </head>
 <body>
   <header class="topbar">
@@ -30,12 +30,12 @@
       <section class="family-grid" aria-label="מאזן בין המשפחות">
         <article class="family-card family-a">
           <div class="family-title"><span class="family-avatar" id="familyAAvatar">ש</span><div><h2 id="familyAName">שפירא</h2><p>החלק המשפחתי בעלויות</p></div></div>
-          <div class="family-stats"><div><small>חלק לתשלום</small><strong id="familyATarget">$0</strong></div><div><small>שולם / הועבר</small><strong id="familyAGiven">$0</strong></div><div><small>נותר לתשלום</small><strong id="familyARemaining">$0</strong></div></div>
+          <div class="family-stats"><div><small>חלק לתשלום</small><strong id="familyATarget">$0</strong></div><div><small>שולם ישירות</small><strong id="familyAGiven">$0</strong></div><div><small>נותר לספקים</small><strong id="familyARemaining">$0</strong></div><div><small id="familyASharedLabel">מאזן משותף</small><strong id="familyAShared">$0</strong></div></div>
           <div class="mini-track"><span id="familyAProgress" style="width:0%"></span></div>
         </article>
         <article class="family-card family-b">
           <div class="family-title"><span class="family-avatar" id="familyBAvatar">ח</span><div><h2 id="familyBName">חג'אג'</h2><p>החלק המשפחתי בעלויות</p></div></div>
-          <div class="family-stats"><div><small>חלק לתשלום</small><strong id="familyBTarget">$0</strong></div><div><small>שולם / הועבר</small><strong id="familyBGiven">$0</strong></div><div><small>נותר לתשלום</small><strong id="familyBRemaining">$0</strong></div></div>
+          <div class="family-stats"><div><small>חלק לתשלום</small><strong id="familyBTarget">$0</strong></div><div><small>שולם ישירות</small><strong id="familyBGiven">$0</strong></div><div><small>נותר לספקים</small><strong id="familyBRemaining">$0</strong></div><div><small id="familyBSharedLabel">מאזן משותף</small><strong id="familyBShared">$0</strong></div></div>
           <div class="mini-track"><span id="familyBProgress" style="width:0%"></span></div>
         </article>
       </section>
@@ -66,6 +66,6 @@
   <dialog id="commentsDialog" class="modal comments-modal"><form method="dialog" id="commentsForm"><div class="modal-header"><div><p class="eyebrow">רשימות החתונה</p><h2>הערות כלליות</h2></div><button class="close-button" value="cancel" aria-label="סגירה">×</button></div><div id="generalCommentsList" class="comments-list"></div><label class="field field-wide"><span>הערה חדשה</span><textarea id="commentText" name="text" rows="4" maxlength="1000" placeholder="כתבו כאן הערה, תזכורת או החלטה משותפת…"></textarea></label><p class="form-error" id="commentError" role="alert"></p><div class="modal-footer"><button class="button button-quiet" value="cancel">סגירה</button><button class="button button-dark" id="commentSaveButton" value="default">שמירת הערה</button></div></form></dialog>
 
   <div id="toast" class="toast" role="status" aria-live="polite"></div>
-  <script src="app.js?v=13"></script>
+  <script src="app.js?v=14"></script>
 </body>
 </html>

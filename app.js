@@ -56,12 +56,25 @@ function expensePaid(expenseId) {
 function totals() {
   const targets = state.expenses.reduce((result, expense) => {
     const shares = expenseShares(expense);
+    const total = Number(expense.amount) || 0;
+    const paid = paymentTotals(expense.id);
+    const shareTotal = shares.a + shares.b || total;
+    const outstanding = Math.max(0, total - paid.total);
     result.a += shares.a;
     result.b += shares.b;
-    result.planned += Number(expense.amount) || 0;
-    result.paid += expensePaid(expense.id);
+    result.planned += total;
+    result.paid += paid.total;
+    if (shareTotal > 0) {
+      result.vendorRemainingA += outstanding * shares.a / shareTotal;
+      result.vendorRemainingB += outstanding * shares.b / shareTotal;
+    }
+    if (shares.a > 0 && shares.b > 0 && total > 0) {
+      const paidForSharedExpense = Math.min(Math.max(0, paid.total), total);
+      const fairPaidA = paidForSharedExpense * shares.a / shareTotal;
+      result.sharedDeltaA += paid.a - fairPaidA;
+    }
     return result;
-  }, { a: 0, b: 0, planned: 0, paid: 0 });
+  }, { a: 0, b: 0, planned: 0, paid: 0, vendorRemainingA: 0, vendorRemainingB: 0, sharedDeltaA: 0 });
   const vendorPayments = state.contributions.filter((item) => item.expenseId);
   targets.contributed = vendorPayments.reduce((sum, item) => sum + (Number(item.amount) || 0), 0);
   targets.givenA = vendorPayments.filter((item) => item.family === 'A').reduce((sum, item) => sum + Number(item.amount || 0), 0);
@@ -96,14 +109,25 @@ function renderSettings() {
 
 function renderFamilyCards() {
   const data = totals();
-  const update = (prefix, target, given) => {
+  const sharedBalance = (delta) => {
+    const roundedDelta = Math.abs(delta) < 0.01 ? 0 : delta;
+    if (roundedDelta > 0) return { label: 'זיכוי משותף', value: roundedDelta, className: 'shared-credit' };
+    if (roundedDelta < 0) return { label: 'חוב משותף', value: Math.abs(roundedDelta), className: 'shared-debt' };
+    return { label: 'מאזן משותף', value: 0, className: 'shared-balanced' };
+  };
+  const update = (prefix, target, given, vendorRemaining, sharedDelta) => {
+    const shared = sharedBalance(sharedDelta);
     $(`#${prefix}Target`).textContent = money(target);
     $(`#${prefix}Given`).textContent = money(given);
-    $(`#${prefix}Remaining`).textContent = money(Math.max(0, target - given));
+    $(`#${prefix}Remaining`).textContent = money(vendorRemaining);
+    $(`#${prefix}Remaining`).className = `vendor-remaining ${vendorRemaining > 0.005 ? 'has-balance' : 'settled'}`;
+    $(`#${prefix}SharedLabel`).textContent = shared.label;
+    $(`#${prefix}Shared`).textContent = money(shared.value);
+    $(`#${prefix}Shared`).className = shared.className;
     $(`#${prefix}Progress`).style.width = `${target ? Math.min(100, given / target * 100) : 0}%`;
   };
-  update('familyA', data.a, data.givenA);
-  update('familyB', data.b, data.givenB);
+  update('familyA', data.a, data.givenA, data.vendorRemainingA, data.sharedDeltaA);
+  update('familyB', data.b, data.givenB, data.vendorRemainingB, -data.sharedDeltaA);
 }
 
 function visibleExpenses() {
