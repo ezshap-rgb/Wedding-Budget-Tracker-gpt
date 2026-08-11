@@ -14,6 +14,7 @@ let editingExpenseId = null;
 let editingContributionId = null;
 let editingCommentId = null;
 let expandedExpenseIds = new Set();
+let linkedPaymentsExpenseId = null;
 let toastTimer;
 
 const $ = (selector) => document.querySelector(selector);
@@ -64,14 +65,19 @@ function totals() {
     result.b += shares.b;
     result.planned += total;
     result.paid += paid.total;
-    if (shareTotal > 0) {
-      result.vendorRemainingA += outstanding * shares.a / shareTotal;
-      result.vendorRemainingB += outstanding * shares.b / shareTotal;
+    if (shareTotal > 0 && outstanding > 0) {
+      const shortfallA = Math.max(0, shares.a - paid.a);
+      const shortfallB = Math.max(0, shares.b - paid.b);
+      const shortfallTotal = shortfallA + shortfallB;
+      if (shortfallTotal > 0) {
+        result.vendorRemainingA += outstanding * shortfallA / shortfallTotal;
+        result.vendorRemainingB += outstanding * shortfallB / shortfallTotal;
+      }
     }
     if (shares.a > 0 && shares.b > 0 && total > 0) {
-      const paidForSharedExpense = Math.min(Math.max(0, paid.total), total);
-      const fairPaidA = paidForSharedExpense * shares.a / shareTotal;
-      result.sharedDeltaA += paid.a - fairPaidA;
+      const advanceA = Math.max(0, paid.a - shares.a);
+      const advanceB = Math.max(0, paid.b - shares.b);
+      result.sharedDeltaA += advanceA - advanceB;
     }
     return result;
   }, { a: 0, b: 0, planned: 0, paid: 0, vendorRemainingA: 0, vendorRemainingB: 0, sharedDeltaA: 0 });
@@ -174,13 +180,34 @@ function renderExpenses() {
     const expanded = expandedExpenseIds.has(expense.id);
     const splitText = splitLabel(expense, expenseShares(expense));
     const tr = document.createElement('tr');
-    tr.innerHTML = `<td><button class="expense-name-toggle" data-expense-toggle="${expense.id}" type="button" aria-expanded="${expanded}" aria-label="הצגת פרטי ${escapeHtml(expense.name)}"><span class="expense-name">${escapeHtml(expense.name)}</span><span class="expand-indicator" aria-hidden="true">⌄</span></button></td><td class="expense-date">${lastPaidDate ? formatDate(lastPaidDate) : '—'}</td><td><span class="split-pill">${escapeHtml(splitText)}</span></td><td class="align-right money">${money(total)}</td><td class="align-right money paid-money">${money(paid.total)}</td><td class="align-right money paid-money">${money(paid.a)}</td><td class="align-right money paid-money">${money(paid.b)}</td><td class="align-right money ${outstanding > 0 ? 'outstanding-money' : 'paid-money'}"><span class="mobile-outstanding-label">נותר לספק</span>${money(outstanding)}</td><td><span class="status-pill status-${statusClass(status)}">${status}</span></td><td><div class="action-buttons"><button class="row-actions" data-expense-payment="${expense.id}" type="button" aria-label="הוספת תשלום עבור ${escapeHtml(expense.name)}">＋</button><button class="row-actions" data-expense-edit="${expense.id}" type="button" aria-label="עריכת ${escapeHtml(expense.name)}">✎</button><button class="row-actions delete-action" data-expense-delete="${expense.id}" type="button" aria-label="מחיקת ${escapeHtml(expense.name)}">×</button></div></td>`;
+    tr.innerHTML = `<td><button class="expense-name-toggle" data-expense-toggle="${expense.id}" type="button" aria-expanded="${expanded}" aria-label="הצגת פרטי ${escapeHtml(expense.name)}"><span class="expense-name">${escapeHtml(expense.name)}</span><span class="expand-indicator" aria-hidden="true">⌄</span></button></td><td class="expense-date">${lastPaidDate ? formatDate(lastPaidDate) : '—'}</td><td><span class="split-pill">${escapeHtml(splitText)}</span></td><td class="align-right money">${money(total)}</td><td class="align-right money paid-money">${money(paid.total)}</td><td class="align-right money paid-money">${money(paid.a)}</td><td class="align-right money paid-money">${money(paid.b)}</td><td class="align-right money ${outstanding > 0 ? 'outstanding-money' : 'paid-money'}"><span class="mobile-outstanding-label">נותר לספק</span>${money(outstanding)}</td><td><span class="status-pill status-${statusClass(status)}">${status}</span></td><td><div class="action-buttons"><button class="row-actions" data-expense-payment="${expense.id}" type="button" aria-label="הוספת תשלום עבור ${escapeHtml(expense.name)}">＋</button>${paid.total > 0 ? `<button class="row-actions payment-edit-action" data-expense-payments="${expense.id}" type="button" aria-label="עריכת תשלומים עבור ${escapeHtml(expense.name)}">₪</button>` : ''}<button class="row-actions" data-expense-edit="${expense.id}" type="button" aria-label="עריכת ${escapeHtml(expense.name)}">✎</button><button class="row-actions delete-action" data-expense-delete="${expense.id}" type="button" aria-label="מחיקת ${escapeHtml(expense.name)}">×</button></div></td>`;
     rows.appendChild(tr);
     const detailRow = document.createElement('tr');
     detailRow.className = `mobile-expansion${expanded ? ' is-open' : ''}`;
     detailRow.innerHTML = `<td colspan="10"><div class="expense-details"><div><small>תאריך תשלום</small><strong>${lastPaidDate ? formatDate(lastPaidDate) : '—'}</strong></div><div><small>חלוקה</small><strong>${escapeHtml(splitText)}</strong></div><div><small>מתוכנן</small><strong>${money(total)}</strong></div><div><small>סה״כ שולם</small><strong class="paid-money">${money(paid.total)}</strong></div><div><small>שפירא שילמו</small><strong class="paid-money">${money(paid.a)}</strong></div><div><small>חג'אג' שילמו</small><strong class="paid-money">${money(paid.b)}</strong></div><div><small>נותר לספק</small><strong class="${outstanding > 0 ? 'outstanding-money' : 'paid-money'}">${money(outstanding)}</strong></div><div><small>סטטוס</small><strong><span class="status-pill status-${statusClass(status)}">${status}</span></strong></div>${expense.notes ? `<div class="expense-detail-note"><small>הערות</small><strong>${escapeHtml(expense.notes)}</strong></div>` : ''}</div></td>`;
     rows.appendChild(detailRow);
   });
+}
+
+function renderLinkedPayments(expenseId) {
+  const list = $('#linkedPaymentsList');
+  const expense = state.expenses.find((item) => item.id === expenseId);
+  if (!list || !expense) return;
+  const payments = state.contributions.filter((item) => item.expenseId === expenseId);
+  if (!payments.length) {
+    list.innerHTML = '<p class="comments-empty">עדיין לא נרשמו תשלומים עבור הוצאה זו.</p>';
+    return;
+  }
+  list.innerHTML = payments.map((payment) => `<article class="linked-payment-row"><div><strong>${escapeHtml(payment.family === 'B' ? FAMILY_B : FAMILY_A)} · ${money(payment.amount)}</strong><small>${payment.date ? formatDate(payment.date) : '—'}${payment.note ? ` · ${escapeHtml(payment.note)}` : ''}</small></div><div class="comment-actions"><button type="button" class="comment-edit" data-linked-payment-edit="${escapeHtml(payment.id)}" aria-label="עריכת תשלום">✎</button><button type="button" class="comment-delete" data-linked-payment-delete="${escapeHtml(payment.id)}" aria-label="מחיקת תשלום">×</button></div></article>`).join('');
+}
+
+function openLinkedPaymentsDialog(expenseId) {
+  const expense = state.expenses.find((item) => item.id === expenseId);
+  if (!expense) return;
+  linkedPaymentsExpenseId = expenseId;
+  $('#linkedPaymentsTitle').textContent = `תשלומים: ${expense.name}`;
+  renderLinkedPayments(expenseId);
+  $('#linkedPaymentsDialog').showModal();
 }
 
 function splitLabel(expense, shares) {
@@ -363,6 +390,7 @@ function deleteContribution(contributionId) {
   state.contributions = state.contributions.filter((item) => item.id !== contributionId);
   saveState();
   render();
+  if (linkedPaymentsExpenseId) renderLinkedPayments(linkedPaymentsExpenseId);
   queueSync({ type: 'deleteContribution', contributionId });
   showToast('התשלום נמחק');
 }
@@ -515,6 +543,17 @@ function bindEvents() {
   $('#paymentForm').addEventListener('submit', handlePaymentSubmit);
   $('#settingsForm').addEventListener('submit', handleSettingsSubmit);
   $('#commentsForm').addEventListener('submit', handleCommentSubmit);
+  $('#linkedPaymentsList').addEventListener('click', (event) => {
+    const editButton = event.target.closest('[data-linked-payment-edit]');
+    const deleteButton = event.target.closest('[data-linked-payment-delete]');
+    if (editButton) {
+      const contributionId = editButton.dataset.linkedPaymentEdit;
+      $('#linkedPaymentsDialog').close();
+      openPaymentDialog('', contributionId);
+    } else if (deleteButton) {
+      deleteContribution(deleteButton.dataset.linkedPaymentDelete);
+    }
+  });
   $('#generalCommentsList').addEventListener('click', (event) => {
     const editButton = event.target.closest('[data-comment-edit]');
     const deleteButton = event.target.closest('[data-comment-delete]');
@@ -536,9 +575,11 @@ function bindEvents() {
       return;
     }
     const paymentButton = event.target.closest('[data-expense-payment]');
+    const paymentsButton = event.target.closest('[data-expense-payments]');
     const editButton = event.target.closest('[data-expense-edit]');
     const deleteButton = event.target.closest('[data-expense-delete]');
     if (paymentButton) openPaymentDialog(paymentButton.dataset.expensePayment);
+    else if (paymentsButton) openLinkedPaymentsDialog(paymentsButton.dataset.expensePayments);
     else if (editButton) openExpenseDialog(editButton.dataset.expenseEdit);
     else if (deleteButton) deleteExpense(deleteButton.dataset.expenseDelete);
     else {
