@@ -8,7 +8,7 @@
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Heebo:wght@400;500;600;700;800&family=Playfair+Display:wght@600;700&display=swap" rel="stylesheet">
-  <link rel="stylesheet" href="styles.css?v=16">
+  <link rel="stylesheet" href="styles.css?v=17">
 </head>
 <body>
   <header class="topbar">
@@ -49,7 +49,7 @@
           <div class="filter-buttons" role="group" aria-label="סינון הוצאות"><button class="filter-button active" data-filter="all" type="button">הכול <b id="countAll">0</b></button><button class="filter-button" data-filter="open" type="button">פתוחות <b id="countOpen">0</b></button><button class="filter-button" data-filter="paid" type="button">שולמו <b id="countPaid">0</b></button></div>
         </div>
         <div class="table-wrap">
-          <table class="expense-table"><thead><tr><th>הוצאה</th><th>תאריך תשלום</th><th>חלוקה</th><th class="align-right">מתוכנן</th><th class="align-right">סה״כ שולם</th><th class="align-right">שפירא שילמו</th><th class="align-right">חג'אג' שילמו</th><th class="align-right">נותר לספק</th><th>סטטוס</th><th><span class="sr-only">פעולות</span></th></tr></thead><tbody id="expenseRows"></tbody></table>
+          <table class="expense-table"><thead><tr><th>הוצאה</th><th>תאריך תשלום</th><th>חלוקה</th><th class="align-right">מתוכנן</th><th class="align-right">סה״כ שולם</th><th class="align-right">שפירא שילמו</th><th class="align-right family-outstanding-th">שפירא נותר</th><th class="align-right">חג'אג' שילמו</th><th class="align-right family-outstanding-th">חג'אג' נותר</th><th class="align-right">נותר לספק</th><th>סטטוס</th><th><span class="sr-only">פעולות</span></th></tr></thead><tbody id="expenseRows"></tbody></table>
           <div id="emptyState" class="empty-state"><div class="empty-icon">✧</div><h3>מכאן מתחילים</h3><p>הוסיפו את האולם, הקייטרינג, הצלם וכל פרט קטן בדרך.</p><button class="button button-dark" id="emptyAddButton" type="button">הוספת ההוצאה הראשונה</button></div>
         </div>
       </section>
@@ -68,6 +68,6 @@
   <dialog id="commentsDialog" class="modal comments-modal"><form method="dialog" id="commentsForm"><div class="modal-header"><div><p class="eyebrow">רשימות החתונה</p><h2>הערות כלליות</h2></div><button class="close-button" value="cancel" aria-label="סגירה">×</button></div><div id="generalCommentsList" class="comments-list"></div><label class="field field-wide"><span>הערה חדשה</span><textarea id="commentText" name="text" rows="4" maxlength="1000" placeholder="כתבו כאן הערה, תזכורת או החלטה משותפת…"></textarea></label><p class="form-error" id="commentError" role="alert"></p><div class="modal-footer"><button class="button button-quiet" value="cancel">סגירה</button><button class="button button-dark" id="commentSaveButton" value="default">שמירת הערה</button></div></form></dialog>
 
   <div id="toast" class="toast" role="status" aria-live="polite"></div>
-  <script src="app.js?v=15"></script>
+  <script src="app.js?v=16"></script>
 </body>
 </html>
