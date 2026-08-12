@@ -6,7 +6,7 @@
  */
 const SHEETS = {
   config: { name: 'הגדרות', headers: ['מפתח', 'ערך'] },
-  expenses: { name: 'הוצאות', headers: ['מזהה', 'נוצר בתאריך', 'שם ההוצאה', 'קטגוריה (ישן)', 'ספק', 'סכום', 'מועד תשלום', 'אופן חלוקה', 'אורחי שפירא (ישן)', "אורחי חג'אג (ישן)", 'מחיר לאורח', 'סכום שפירא', "סכום חג'אג", 'סטטוס (מחושב)', 'הערות', 'אופן חישוב הסכום', 'מספר אורחים'] },
+  expenses: { name: 'הוצאות', headers: ['מזהה', 'נוצר בתאריך', 'שם ההוצאה', 'קטגוריה (ישן)', 'ספק', 'סכום', 'מועד תשלום', 'אופן חלוקה', 'אורחי שפירא (ישן)', "אורחי חג'אג (ישן)", 'מחיר לאורח', 'סכום שפירא', "סכום חג'אג", 'סטטוס (מחושב)', 'הערות', 'אופן חישוב הסכום', 'מספר אורחים', 'מזומן בחתונה'] },
   contributions: { name: 'תשלומים', headers: ['מזהה', 'נוצר בתאריך', 'תאריך', 'משפחה', 'סכום', 'סוג תשלום', 'מזהה הוצאה', 'הערה'] },
   comments: { name: 'הערות', headers: ['מזהה', 'נוצר בתאריך', 'הערה'] }
 };
@@ -82,7 +82,7 @@ function doPost(event) {
 function expenseRow_(item) {
   return [item.id, item.createdAt, item.name, '', '', number_(item.amount), '',
     item.splitMethod, 0, 0, number_(item.perGuest), number_(item.customA), number_(item.customB), '', item.notes,
-    item.amountMethod || 'fixed', number_(item.guestCount)];
+    item.amountMethod || 'fixed', number_(item.guestCount), item.cash ? 'כן' : ''];
 }
 
 function contributionRow_(item) {
@@ -151,7 +151,7 @@ function readExpenses_(sheet) {
       id: String(row[0]), createdAt: String(row[1] || ''), name: String(row[2] || ''), vendor: String(row[4] || ''),
       amount: number_(row[5]), dueDate: dateString_(row[6]), splitMethod: String(row[7] || 'even'), guestsA: number_(row[8]), guestsB: number_(row[9]),
       perGuest: number_(row[10]), customA: number_(row[11]), customB: number_(row[12]), notes: String(row[14] || ''),
-      amountMethod: String(row[15] || 'fixed'), guestCount: number_(row[16])
+      amountMethod: String(row[15] || 'fixed'), guestCount: number_(row[16]), cash: Boolean(row[17])
     };
   });
 }

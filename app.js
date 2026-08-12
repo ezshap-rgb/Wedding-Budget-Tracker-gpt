@@ -15,6 +15,7 @@ let editingContributionId = null;
 let editingCommentId = null;
 let expandedExpenseIds = new Set();
 let linkedPaymentsExpenseId = null;
+let cashSummaryExpanded = false;
 let toastTimer;
 
 const $ = (selector) => document.querySelector(selector);
@@ -91,6 +92,7 @@ function totals() {
 function render() {
   renderSettings();
   renderFamilyCards();
+  renderCashSummary();
   renderExpenses();
   renderComments();
   updateExpenseOptions();
@@ -175,7 +177,7 @@ function renderExpenses() {
     const paid = paymentTotals(expense.id);
     const total = Number(expense.amount) || 0;
     const outstanding = Math.max(0, total - paid.total);
-    const status = paid.total >= total && total > 0 ? 'שולם' : paid.total > 0 ? 'חלקי' : 'מתוכנן';
+    const status = expense.cash && paid.total < total ? 'מזומן' : paid.total >= total && total > 0 ? 'שולם' : paid.total > 0 ? 'חלקי' : 'מתוכנן';
     const lastPaidDate = latestPaymentDate(expense.id);
     const expanded = expandedExpenseIds.has(expense.id);
     const shares = expenseShares(expense);
@@ -186,12 +188,13 @@ function renderExpenses() {
     const familyOutstandingA = shortfallTotal > 0 ? outstanding * shortfallA / shortfallTotal : 0;
     const familyOutstandingB = shortfallTotal > 0 ? outstanding * shortfallB / shortfallTotal : 0;
     const outstandingClass = (value) => value > 0.005 ? 'family-outstanding' : 'family-settled';
+    const vendorRemainingText = expense.cash && outstanding > 0.005 ? 'מזומן' : money(outstanding);
     const tr = document.createElement('tr');
-    tr.innerHTML = `<td><button class="expense-name-toggle" data-expense-toggle="${expense.id}" type="button" aria-expanded="${expanded}" aria-label="הצגת פרטי ${escapeHtml(expense.name)}"><span class="expense-name">${escapeHtml(expense.name)}</span><span class="expand-indicator" aria-hidden="true">⌄</span></button></td><td class="expense-date">${lastPaidDate ? formatDate(lastPaidDate) : '—'}</td><td><span class="split-pill">${escapeHtml(splitText)}</span></td><td class="align-right money">${money(total)}</td><td class="align-right money paid-money">${money(paid.total)}</td><td class="align-right money paid-money">${money(paid.a)}</td><td class="align-right money ${outstandingClass(familyOutstandingA)}">${money(familyOutstandingA)}</td><td class="align-right money paid-money">${money(paid.b)}</td><td class="align-right money ${outstandingClass(familyOutstandingB)}">${money(familyOutstandingB)}</td><td class="align-right money ${outstanding > 0 ? 'outstanding-money' : 'paid-money'}"><span class="mobile-outstanding-label">נותר לספק</span>${money(outstanding)}</td><td><span class="status-pill status-${statusClass(status)}">${status}</span></td><td><div class="action-buttons"><button class="row-actions" data-expense-payment="${expense.id}" type="button" aria-label="הוספת תשלום עבור ${escapeHtml(expense.name)}">＋</button>${paid.total > 0 ? `<button class="row-actions payment-edit-action" data-expense-payments="${expense.id}" type="button" aria-label="עריכת תשלומים עבור ${escapeHtml(expense.name)}">₪</button>` : ''}<button class="row-actions" data-expense-edit="${expense.id}" type="button" aria-label="עריכת ${escapeHtml(expense.name)}">✎</button><button class="row-actions delete-action" data-expense-delete="${expense.id}" type="button" aria-label="מחיקת ${escapeHtml(expense.name)}">×</button></div></td>`;
+    tr.innerHTML = `<td><button class="expense-name-toggle" data-expense-toggle="${expense.id}" type="button" aria-expanded="${expanded}" aria-label="הצגת פרטי ${escapeHtml(expense.name)}"><span class="expense-name">${escapeHtml(expense.name)}</span><span class="expand-indicator" aria-hidden="true">⌄</span></button></td><td class="expense-date">${lastPaidDate ? formatDate(lastPaidDate) : '—'}</td><td><span class="split-pill">${escapeHtml(splitText)}</span></td><td class="align-right money">${money(total)}</td><td class="align-right money paid-money">${money(paid.total)}</td><td class="align-right money paid-money">${money(paid.a)}</td><td class="align-right money ${outstandingClass(familyOutstandingA)}">${money(familyOutstandingA)}</td><td class="align-right money paid-money">${money(paid.b)}</td><td class="align-right money ${outstandingClass(familyOutstandingB)}">${money(familyOutstandingB)}</td><td class="align-right money ${outstanding > 0.005 ? 'outstanding-money' : 'paid-money'}"><span class="mobile-outstanding-label">נותר לספק</span>${vendorRemainingText}</td><td><span class="status-pill status-${statusClass(status)}">${status}</span></td><td><div class="action-buttons"><button class="row-actions" data-expense-payment="${expense.id}" type="button" aria-label="הוספת תשלום עבור ${escapeHtml(expense.name)}">＋</button>${paid.total > 0 ? `<button class="row-actions payment-edit-action" data-expense-payments="${expense.id}" type="button" aria-label="עריכת תשלומים עבור ${escapeHtml(expense.name)}">₪</button>` : ''}<button class="row-actions" data-expense-edit="${expense.id}" type="button" aria-label="עריכת ${escapeHtml(expense.name)}">✎</button><button class="row-actions delete-action" data-expense-delete="${expense.id}" type="button" aria-label="מחיקת ${escapeHtml(expense.name)}">×</button></div></td>`;
     rows.appendChild(tr);
     const detailRow = document.createElement('tr');
     detailRow.className = `mobile-expansion${expanded ? ' is-open' : ''}`;
-    detailRow.innerHTML = `<td colspan="12"><div class="expense-details"><div><small>תאריך תשלום</small><strong>${lastPaidDate ? formatDate(lastPaidDate) : '—'}</strong></div><div><small>חלוקה</small><strong>${escapeHtml(splitText)}</strong></div><div><small>מתוכנן</small><strong>${money(total)}</strong></div><div><small>סה״כ שולם</small><strong class="paid-money">${money(paid.total)}</strong></div><div><small>שפירא שילמו</small><strong class="paid-money">${money(paid.a)}</strong></div><div><small>שפירא נותר</small><strong class="${outstandingClass(familyOutstandingA)}">${money(familyOutstandingA)}</strong></div><div><small>חג'אג' שילמו</small><strong class="paid-money">${money(paid.b)}</strong></div><div><small>חג'אג' נותר</small><strong class="${outstandingClass(familyOutstandingB)}">${money(familyOutstandingB)}</strong></div><div><small>נותר לספק</small><strong class="${outstanding > 0 ? 'outstanding-money' : 'paid-money'}">${money(outstanding)}</strong></div><div><small>סטטוס</small><strong><span class="status-pill status-${statusClass(status)}">${status}</span></strong></div>${expense.notes ? `<div class="expense-detail-note"><small>הערות</small><strong>${escapeHtml(expense.notes)}</strong></div>` : ''}</div></td>`;
+    detailRow.innerHTML = `<td colspan="12"><div class="expense-details"><div><small>תאריך תשלום</small><strong>${lastPaidDate ? formatDate(lastPaidDate) : '—'}</strong></div><div><small>חלוקה</small><strong>${escapeHtml(splitText)}</strong></div><div><small>מתוכנן</small><strong>${money(total)}</strong></div><div><small>סה״כ שולם</small><strong class="paid-money">${money(paid.total)}</strong></div><div><small>שפירא שילמו</small><strong class="paid-money">${money(paid.a)}</strong></div><div><small>שפירא נותר</small><strong class="${outstandingClass(familyOutstandingA)}">${money(familyOutstandingA)}</strong></div><div><small>חג'אג' שילמו</small><strong class="paid-money">${money(paid.b)}</strong></div><div><small>חג'אג' נותר</small><strong class="${outstandingClass(familyOutstandingB)}">${money(familyOutstandingB)}</strong></div><div><small>נותר לספק</small><strong class="${outstanding > 0.005 ? 'outstanding-money' : 'paid-money'}">${vendorRemainingText}</strong></div><div><small>סטטוס</small><strong><span class="status-pill status-${statusClass(status)}">${status}</span></strong></div>${expense.notes ? `<div class="expense-detail-note"><small>הערות</small><strong>${escapeHtml(expense.notes)}</strong></div>` : ''}</div></td>`;
     rows.appendChild(detailRow);
   });
 }
@@ -217,6 +220,49 @@ function openLinkedPaymentsDialog(expenseId) {
   $('#linkedPaymentsDialog').showModal();
 }
 
+function cashTotals() {
+  const items = [];
+  let totalA = 0;
+  let totalB = 0;
+  state.expenses.forEach((expense) => {
+    if (!expense.cash) return;
+    const total = Number(expense.amount) || 0;
+    const paid = paymentTotals(expense.id);
+    const outstanding = Math.max(0, total - paid.total);
+    const shares = expenseShares(expense);
+    const shortfallA = Math.max(0, shares.a - paid.a);
+    const shortfallB = Math.max(0, shares.b - paid.b);
+    const shortfallTotal = shortfallA + shortfallB;
+    const familyA = shortfallTotal > 0 ? outstanding * shortfallA / shortfallTotal : 0;
+    const familyB = shortfallTotal > 0 ? outstanding * shortfallB / shortfallTotal : 0;
+    if (outstanding > 0.005) {
+      items.push({ name: expense.name, a: familyA, b: familyB });
+      totalA += familyA;
+      totalB += familyB;
+    }
+  });
+  return { a: totalA, b: totalB, items };
+}
+
+function renderCashSummary() {
+  const data = cashTotals();
+  const aAmount = $('#cashSummaryAAmount');
+  const bAmount = $('#cashSummaryBAmount');
+  if (!aAmount || !bAmount) return;
+  aAmount.textContent = money(data.a);
+  bAmount.textContent = money(data.b);
+  const toggle = $('#cashSummaryToggle');
+  const details = $('#cashSummaryDetails');
+  const list = $('#cashSummaryList');
+  toggle.setAttribute('aria-expanded', cashSummaryExpanded ? 'true' : 'false');
+  details.classList.toggle('is-open', cashSummaryExpanded);
+  if (!data.items.length) {
+    list.innerHTML = '<p class="cash-summary-empty">אין הוצאות מזומן שעדיין צריך לשלם בחתונה.</p>';
+    return;
+  }
+  list.innerHTML = data.items.map((item) => `<div class="cash-summary-item"><strong>${escapeHtml(item.name)}</strong><span class="cash-fam cash-fam-a">${money(item.a)}</span><span class="cash-fam cash-fam-b">${money(item.b)}</span></div>`).join('');
+}
+
 function splitLabel(expense, shares) {
   if (expense.amountMethod === 'guests') {
     const family = expense.splitMethod === 'familyA' ? FAMILY_A : expense.splitMethod === 'familyB' ? FAMILY_B : '';
@@ -230,7 +276,7 @@ function splitLabel(expense, shares) {
 }
 
 function statusClass(status) {
-  return { 'שולם': 'paid', 'חלקי': 'partial', 'מתוכנן': 'planned' }[status] || 'planned';
+  return { 'שולם': 'paid', 'חלקי': 'partial', 'מתוכנן': 'planned', 'מזומן': 'cash' }[status] || 'planned';
 }
 
 function formatDate(value, short = false) {
@@ -257,6 +303,7 @@ function openExpenseDialog(expenseId = null) {
     const splitMethod = legacyGuestSplit ? 'custom' : expense.splitMethod;
     const amountMethod = legacyGuestSplit ? 'fixed' : (expense.amountMethod || 'fixed');
     Object.entries({ name: expense.name, amount: expense.amount, amountMethod, splitMethod, guestCount: expense.guestCount, perGuest: expense.perGuest, customA: legacyGuestSplit ? legacyShares.a : expense.customA, customB: legacyGuestSplit ? legacyShares.b : expense.customB, notes: expense.notes }).forEach(([key, value]) => { if (form.elements[key]) form.elements[key].value = value ?? ''; });
+    if (form.elements.cash) form.elements.cash.checked = Boolean(expense.cash);
   }
   $('#expenseError').textContent = '';
   toggleSplitDetails();
@@ -340,7 +387,7 @@ function handleExpenseSubmit(event) {
   const existing = editingExpenseId ? state.expenses.find((item) => item.id === editingExpenseId) : null;
   const existingPaid = existing ? expensePaid(existing.id) : 0;
   if (paidAmount < 0 || paidAmount > Math.max(0, amount - existingPaid) + 0.01) { error.textContent = 'סכום התשלום הנוסף אינו יכול להיות גדול מהיתרה של ההוצאה.'; return; }
-  const expense = { id: existing?.id || uid('expense'), createdAt: existing?.createdAt || new Date().toISOString(), name: data.name.trim(), vendor: '', amount, dueDate: '', amountMethod: data.amountMethod || 'fixed', splitMethod: data.splitMethod, guestCount: Number(data.guestCount) || 0, perGuest: Number(data.perGuest) || 0, customA: Number(data.customA) || 0, customB: Number(data.customB) || 0, notes: data.notes.trim() };
+  const expense = { id: existing?.id || uid('expense'), createdAt: existing?.createdAt || new Date().toISOString(), name: data.name.trim(), vendor: '', amount, dueDate: '', amountMethod: data.amountMethod || 'fixed', splitMethod: data.splitMethod, guestCount: Number(data.guestCount) || 0, perGuest: Number(data.perGuest) || 0, customA: Number(data.customA) || 0, customB: Number(data.customB) || 0, notes: data.notes.trim(), cash: data.cash === 'on' };
   const immediatePayment = paidAmount > 0 ? { id: uid('contribution'), createdAt: new Date().toISOString(), date: data.paidDate || today(), family: data.paidBy || 'A', amount: paidAmount, type: 'שולם', expenseId: expense.id, note: 'שולם בעת הוספת ההוצאה' } : null;
   const index = state.expenses.findIndex((item) => item.id === expense.id);
   if (index >= 0) state.expenses[index] = expense; else state.expenses.push(expense);
@@ -546,6 +593,7 @@ function bindEvents() {
   $('#topAddPaymentButton').addEventListener('click', () => openPaymentDialog());
   $('#commentsButton').addEventListener('click', openComments);
   $('#settingsButton').addEventListener('click', openSettings);
+  $('#cashSummaryToggle').addEventListener('click', () => { cashSummaryExpanded = !cashSummaryExpanded; renderCashSummary(); });
   $('#expenseForm').addEventListener('submit', handleExpenseSubmit);
   $('#paymentForm').addEventListener('submit', handlePaymentSubmit);
   $('#settingsForm').addEventListener('submit', handleSettingsSubmit);
