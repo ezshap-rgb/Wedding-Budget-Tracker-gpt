@@ -19,7 +19,7 @@ let cashSummaryExpanded = false;
 let toastTimer;
 
 const $ = (selector) => document.querySelector(selector);
-const money = (value) => new Intl.NumberFormat('he-IL', { style: 'currency', currency: 'ILS', maximumFractionDigits: 0 }).format(Number(value) || 0);
+const money = (value) => `₪${new Intl.NumberFormat('he-IL', { maximumFractionDigits: 0 }).format(Number(value) || 0)}`;
 const uid = (prefix) => `${prefix}_${Date.now()}_${Math.random().toString(36).slice(2, 8)}`;
 const today = () => new Date().toISOString().slice(0, 10);
 
@@ -142,7 +142,7 @@ function visibleExpenses() {
   const query = ($('#searchInput').value || '').trim().toLowerCase();
   return state.expenses.filter((expense) => {
     const paid = expensePaid(expense.id);
-    const matchesFilter = activeFilter === 'all' || (activeFilter === 'paid' ? paid >= Number(expense.amount || 0) : paid < Number(expense.amount || 0));
+    const matchesFilter = activeFilter === 'all' || (activeFilter === 'paid' ? paid >= Number(expense.amount || 0) : activeFilter === 'cash' ? Boolean(expense.cash) : paid < Number(expense.amount || 0));
     const matchesQuery = !query || [expense.name, expense.vendor, expense.notes].join(' ').toLowerCase().includes(query);
     return matchesFilter && matchesQuery;
   });
@@ -172,6 +172,7 @@ function renderExpenses() {
   $('#countAll').textContent = state.expenses.length;
   $('#countPaid').textContent = paidExpenses;
   $('#countOpen').textContent = openExpenses;
+  $('#countCash').textContent = state.expenses.filter((expense) => expense.cash).length;
 
   expenses.forEach((expense) => {
     const paid = paymentTotals(expense.id);
