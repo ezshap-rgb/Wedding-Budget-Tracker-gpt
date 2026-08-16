@@ -195,8 +195,31 @@ function renderExpenses() {
     rows.appendChild(tr);
     const detailRow = document.createElement('tr');
     detailRow.className = `mobile-expansion${expanded ? ' is-open' : ''}`;
-    detailRow.innerHTML = `<td colspan="12"><div class="expense-details"><div><small>תאריך תשלום</small><strong>${lastPaidDate ? formatDate(lastPaidDate) : '—'}</strong></div><div><small>חלוקה</small><strong>${escapeHtml(splitText)}</strong></div><div><small>מתוכנן</small><strong>${money(total)}</strong></div><div><small>סה״כ שולם</small><strong class="paid-money">${money(paid.total)}</strong></div><div><small>שפירא שילמו</small><strong class="paid-money">${money(paid.a)}</strong></div><div><small>שפירא נותר</small><strong class="${outstandingClass(familyOutstandingA)}">${money(familyOutstandingA)}</strong></div><div><small>חג'אג' שילמו</small><strong class="paid-money">${money(paid.b)}</strong></div><div><small>חג'אג' נותר</small><strong class="${outstandingClass(familyOutstandingB)}">${money(familyOutstandingB)}</strong></div><div><small>נותר לספק</small><strong class="${outstanding > 0.005 ? 'outstanding-money' : 'paid-money'}">${vendorRemainingText}</strong></div><div><small>סטטוס</small><strong><span class="status-pill status-${statusClass(status)}">${status}</span></strong></div>${expense.notes ? `<div class="expense-detail-note"><small>הערות</small><strong>${escapeHtml(expense.notes)}</strong></div>` : ''}</div></td>`;
+    detailRow.innerHTML = `<td colspan="12"><div class="expense-details"><div class="expense-detail-heading">${escapeHtml(expense.name)}</div><div><small>תאריך תשלום</small><strong>${lastPaidDate ? formatDate(lastPaidDate) : '—'}</strong></div><div><small>חלוקה</small><strong>${escapeHtml(splitText)}</strong></div><div><small>מתוכנן</small><strong>${money(total)}</strong></div><div><small>סה״כ שולם</small><strong class="paid-money">${money(paid.total)}</strong></div><div><small>שפירא שילמו</small><strong class="paid-money">${money(paid.a)}</strong></div><div><small>שפירא נותר</small><strong class="${outstandingClass(familyOutstandingA)}">${money(familyOutstandingA)}</strong></div><div><small>חג'אג' שילמו</small><strong class="paid-money">${money(paid.b)}</strong></div><div><small>חג'אג' נותר</small><strong class="${outstandingClass(familyOutstandingB)}">${money(familyOutstandingB)}</strong></div><div><small>נותר לספק</small><strong class="${outstanding > 0.005 ? 'outstanding-money' : 'paid-money'}">${vendorRemainingText}</strong></div><div><small>סטטוס</small><strong><span class="status-pill status-${statusClass(status)}">${status}</span></strong></div>${expense.notes ? `<div class="expense-detail-note"><small>הערות</small><strong>${escapeHtml(expense.notes)}</strong></div>` : ''}</div></td>`;
     rows.appendChild(detailRow);
+  });
+  fitExpenseTitles();
+}
+
+// On mobile, shrink long expense titles so they fit on two wrapped lines within
+// the title column instead of being cut off by an ellipsis. Desktop table is
+// untouched. Falls back to a 2-line clamp (with ellipsis) for extreme lengths.
+function fitExpenseTitles() {
+  if (window.innerWidth > 620) return;
+  const canvas = fitExpenseTitles.canvas || (fitExpenseTitles.canvas = document.createElement('canvas'));
+  const ctx = canvas.getContext('2d');
+  document.querySelectorAll('#expenseRows .expense-name').forEach((nameEl) => {
+    const toggle = nameEl.closest('.expense-name-toggle');
+    if (!toggle) return;
+    const indicator = toggle.querySelector('.expand-indicator');
+    const gap = parseFloat(getComputedStyle(toggle).gap) || 0;
+    const available = Math.max(0, toggle.clientWidth - (indicator ? indicator.offsetWidth : 0) - gap);
+    if (!available) return;
+    const style = getComputedStyle(nameEl);
+    const baseSize = parseFloat(style.fontSize) || 13;
+    ctx.font = `${style.fontWeight} ${baseSize}px ${style.fontFamily}`;
+    const width = ctx.measureText(nameEl.textContent).width;
+    nameEl.style.fontSize = width > available * 2 ? `${Math.max(9, baseSize * (available * 2) / width)}px` : '';
   });
 }
 
@@ -647,6 +670,9 @@ function bindEvents() {
   });
 
 }
+
+let titleFitTimer;
+window.addEventListener('resize', () => { clearTimeout(titleFitTimer); titleFitTimer = setTimeout(fitExpenseTitles, 150); });
 
 bindEvents();
 render();
